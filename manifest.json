@@ -1,0 +1,26 @@
+{
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "browser_action": {
+    "default_icon": "icon.png",
+    "default_popup": "popup.html",
+    "default_title": "UP"
+  },
+  "description": "UP - Save all resources files with retaining folder structure.",
+  "devtools_page": "devtool.html",
+  "icons": {
+    "128": "icon.png"
+  },
+  "manifest_version": 2,
+  "name": "CS315-Checker",
+  "permissions": [
+    "tabs",
+    "http://*/",
+    "https://*/",
+    "*://*/*",
+    "downloads",
+    "downloads.shelf"
+  ],
+  "version": "0.0.1"
+}
