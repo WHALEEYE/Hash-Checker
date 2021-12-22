@@ -1,4 +1,4 @@
-let url2hash = new Map();
+let url2hash = {};
 
 const WATabs = []
 const Methods = {
@@ -150,7 +150,8 @@ browser.webRequest.onBeforeRequest.addListener(
 		let filter = browser.webRequest.filterResponseData(details.requestId);
 		let decoder = new TextDecoder("utf-8");
 		filter.ondata = event => {
-			url2hash.set(details.url, SHA256(event.data));
+			url2hash[details.url] = SHA256(event.data);
+			browser.storage.local.set({'url2hash': url2hash});
 			console.log(SHA256(event.data));
 			let str = decoder.decode(event.data, { stream: true });
 			console.log(str);

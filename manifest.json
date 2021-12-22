@@ -16,11 +16,16 @@
     "page_action": {
         "browser_style": true,
         "default_icon": {
-          "19": "./assets/icons/wa-16_text_inact.png",
-          "38": "./assets/icons/wa-32_text_inact.png"
+            "19": "./assets/icons/wa-16_text_inact.png",
+            "38": "./assets/icons/wa-32_text_inact.png"
         },
-        "default_title": "__MSG_PageActionTitleN__"
-      },
+        "default_title": "WebAssembly not detected"
+    },
+    "browser_action": {
+        "default_icon": "assets/icons/wa-96.png",
+        "default_title": "Hash-Hacker",
+        "default_popup": "popups/index.html"
+    },
     "background": {
         "scripts": [
             "background/sha256.js",
