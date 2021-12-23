@@ -1,5 +1,5 @@
 .popup-body {
-  width: 600px;
+  /* width: 500px; */
 }
 
 .hidden {
@@ -12,14 +12,6 @@
   text-align: center;
   font-size: 1.5em;
   cursor: pointer;
-}
-
-.reset {
-  width: 80px;
-}
-
-.reset:hover {
-  outline: black solid 2px;
 }
 
 table{
