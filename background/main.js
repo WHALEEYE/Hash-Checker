@@ -136,23 +136,36 @@ browser.webRequest.onHeadersReceived.addListener(
 			updatePageAction(targetTab)
 		})
 	},
-	{
-		urls: ['<all_urls>'],
-	},
+	{ urls: ['<all_urls>'], },
 	['responseHeaders', 'blocking']
 )
 
-browser.webRequest.onBeforeRequest.addListener(
+function get_domain(requestHeaders) {
+	let host_part = requestHeaders.find(header => {
+		return header.name === 'Host' || header.name === 'host';
+	});
+
+	let referer_part = requestHeaders.find(header => {
+		return header.name === 'Referer' || header.name === 'Referer';
+	});
+	return referer_part === undefined ? host_part : referer_part;
+}
+
+browser.webRequest.onBeforeSendHeaders.addListener(
 	details => {
-		// console.log(details.type)
+		let domain = get_domain(details.requestHeaders);
+		console.log(domain);
 		let filter = browser.webRequest.filterResponseData(details.requestId);
-		let decoder = new TextDecoder("utf-8");
+
 		filter.ondata = event => {
-			url2hash[details.url] = SHA256(event.data);
-			browser.storage.local.set({'url2hash': url2hash});
-			console.log(SHA256(event.data));
-			let str = decoder.decode(event.data, { stream: true });
-			// console.log(str);
+			if(url2hash[domain.value] === undefined) {
+				url2hash[domain.value] = { [details.url]: SHA256(event.data) }
+			}
+			else {
+				Object.assign(url2hash[domain.value], { [details.url]: SHA256(event.data) })
+			}
+			browser.storage.local.set({ 'url2hash': url2hash });
+			// console.log(SHA256(event.data));
 			filter.write(event.data);
 			filter.disconnect();
 		}
@@ -160,7 +173,7 @@ browser.webRequest.onBeforeRequest.addListener(
 		return {};
 	},
 	{ urls: ['<all_urls>'] },
-	["blocking"]
+	["blocking", "requestHeaders"]
 );
 
 
