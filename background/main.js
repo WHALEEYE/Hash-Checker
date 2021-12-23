@@ -149,25 +149,29 @@ function get_domain(requestHeaders) {
 		return header.name === 'Referer' || header.name === 'Referer';
 	});
 	let domain = referer_part === undefined ? host_part : referer_part;
-	return domain;
+	const regex = /(?:[\w-]+\.)+[\w-]+/;
+	return regex.exec(domain.value);
 }
 
 browser.webRequest.onBeforeSendHeaders.addListener(
 	details => {
 		let domain = get_domain(details.requestHeaders);
-		let filter = browser.webRequest.filterResponseData(details.requestId);
+		if(domain !== null && domain !== undefined) {
+			let domain_name = domain[0];
+			let filter = browser.webRequest.filterResponseData(details.requestId);
 
-		filter.ondata = event => {
-			if(url2hash[domain.value] === undefined) {
-				url2hash[domain.value] = { [details.url]: SHA256(event.data) }
+			filter.ondata = event => {
+				if(url2hash[domain_name] === undefined) {
+					url2hash[domain_name] = { [details.url]: SHA256(event.data) }
+				}
+				else {
+					Object.assign(url2hash[domain_name], { [details.url]: SHA256(event.data) })
+				}
+				browser.storage.local.set({ 'url2hash': url2hash });
+				// console.log(SHA256(event.data));
+				filter.write(event.data);
+				filter.disconnect();
 			}
-			else {
-				Object.assign(url2hash[domain.value], { [details.url]: SHA256(event.data) })
-			}
-			browser.storage.local.set({ 'url2hash': url2hash });
-			// console.log(SHA256(event.data));
-			filter.write(event.data);
-			filter.disconnect();
 		}
 
 		return {};
