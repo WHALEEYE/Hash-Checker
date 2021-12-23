@@ -154,7 +154,6 @@ function get_domain(requestHeaders) {
 browser.webRequest.onBeforeSendHeaders.addListener(
 	details => {
 		let domain = get_domain(details.requestHeaders);
-		console.log(domain);
 		let filter = browser.webRequest.filterResponseData(details.requestId);
 
 		filter.ondata = event => {
