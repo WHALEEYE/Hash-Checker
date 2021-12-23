@@ -148,7 +148,8 @@ function get_domain(requestHeaders) {
 	let referer_part = requestHeaders.find(header => {
 		return header.name === 'Referer' || header.name === 'Referer';
 	});
-	return referer_part === undefined ? host_part : referer_part;
+	let domain = referer_part === undefined ? host_part : referer_part;
+	return domain;
 }
 
 browser.webRequest.onBeforeSendHeaders.addListener(
