@@ -2,7 +2,6 @@ let url2hash = {};
 
 const WATabs = []
 const Methods = {
-	decompress: true,
 	signature: true,
 	mime: true,
 }
@@ -56,13 +55,13 @@ function updatePageAction(tab) {
  * > req: Object - Details of the request.
  * > cb: (req: RequestDetails) => any - Fires when wasm was detected.
  **/
-function detectWasm(req, cb) {
+function detectWasm(req, callback) {
 	// Get content type from header
 	let contentType = req.responseHeaders.find(h => ContentTypeRGX.test(h.name))
 	if (contentType) contentType = contentType.value
 
 	// Check mime types and ignore non-application type
-	if (contentType && WasmMimeRGX.test(contentType)) return cb(req)
+	if (contentType && WasmMimeRGX.test(contentType)) return callback(req)
 
 	// Check signature
 	if (!Methods.signature) return
@@ -84,7 +83,7 @@ function detectWasm(req, cb) {
 			sig[2] === 0x73 &&
 			sig[3] === 0x6d
 		) {
-			return cb(req)
+			return callback(req)
 		}
 	}
 }
@@ -101,8 +100,6 @@ browser.runtime.onConnect.addListener(port => {
 // Handle requests
 browser.webRequest.onHeadersReceived.addListener(
 	req => {
-		// console.log("req:")
-		// console.log(req)
 		// Reset wasm popup for this tab
 		if (!req.documentUrl && req.parentFrameId === -1) {
 			let targetTab = WATabs.find(t => t.id === req.tabId)
@@ -147,6 +144,7 @@ browser.webRequest.onHeadersReceived.addListener(
 
 browser.webRequest.onBeforeRequest.addListener(
 	details => {
+		// console.log(details.type)
 		let filter = browser.webRequest.filterResponseData(details.requestId);
 		let decoder = new TextDecoder("utf-8");
 		filter.ondata = event => {
@@ -154,14 +152,14 @@ browser.webRequest.onBeforeRequest.addListener(
 			browser.storage.local.set({'url2hash': url2hash});
 			console.log(SHA256(event.data));
 			let str = decoder.decode(event.data, { stream: true });
-			console.log(str);
+			// console.log(str);
 			filter.write(event.data);
 			filter.disconnect();
 		}
 
 		return {};
 	},
-	{ urls: ['<all_urls>'], types: ["main_frame"] },
+	{ urls: ['<all_urls>'] },
 	["blocking"]
 );
 
@@ -183,7 +181,6 @@ browser.tabs.onRemoved.addListener(tabId => {
 // Handle settings change
 browser.storage.onChanged.addListener(changes => {
 	if (!changes.methods) return
-	Methods.decompress = false
 	Methods.signature = changes.methods.newValue.signature
 	Methods.mime = changes.methods.newValue.mime
 })
