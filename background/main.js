@@ -158,21 +158,24 @@ browser.webRequest.onBeforeSendHeaders.addListener(
 		let tabId = details.tabId;
 		if (tabId && tabId !== browser.tabs.TAB_ID_NONE) {
 			browser.tabs.get(tabId).then(tab => {
+				let url = tab.url;
 				let title = tab.title;
 				let iconUrl = tab.favIconUrl;
 				let filter = browser.webRequest.filterResponseData(details.requestId);
 
 				filter.ondata = event => {
-					if (url2hash[title] === undefined) {
-						url2hash[title] = { 
+					if (url2hash[url] === undefined) {
+						url2hash[url] = {
 							[details.url]: SHA256(event.data),
-							'iconUrl': iconUrl
+							'iconUrl': iconUrl,
+							'title': title
 						}
 					}
 					else {
-						Object.assign(url2hash[title], { 
+						Object.assign(url2hash[url], {
 							[details.url]: SHA256(event.data),
-							'iconUrl': iconUrl
+							'iconUrl': iconUrl,
+							'title': title
 						})
 					}
 					browser.storage.local.set({ 'url2hash': url2hash });
