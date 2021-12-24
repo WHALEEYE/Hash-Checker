@@ -1,4 +1,4 @@
-let url2hash = {};
+let database = {};
 
 const WATabs = []
 const Methods = {
@@ -164,21 +164,19 @@ browser.webRequest.onBeforeSendHeaders.addListener(
 				let filter = browser.webRequest.filterResponseData(details.requestId);
 
 				filter.ondata = event => {
-					if (url2hash[url] === undefined) {
-						url2hash[url] = {
-							[details.url]: SHA256(event.data),
+					if (database[url] === undefined) {
+						database[url] = {
+							'url2hash': {[details.url]: SHA256(event.data)},
 							'iconUrl': iconUrl,
 							'title': title
 						}
 					}
 					else {
-						Object.assign(url2hash[url], {
+						Object.assign(database[url]['url2hash'], {
 							[details.url]: SHA256(event.data),
-							'iconUrl': iconUrl,
-							'title': title
 						})
 					}
-					browser.storage.local.set({ 'url2hash': url2hash });
+					browser.storage.local.set({ 'database': database });
 					// console.log(SHA256(event.data));
 					filter.write(event.data);
 					filter.disconnect();
