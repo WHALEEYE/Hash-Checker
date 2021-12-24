@@ -24,7 +24,8 @@ function reset(database) {
     stored_database = database;
     function logTabs(tabs) {
         let current_url = tabs[0].url;
-        $("#domain-selector").children("[selected]").text(current_url);
+        let current_title = tabs[0].title;
+        $("#domain-selector").children("[selected]").text(current_title);
 
         Object.entries(database).forEach((value) => {
             let [siteUrl, siteData] = value;
@@ -52,6 +53,5 @@ function refresh_table(siteData) {
         let str3 = `<td> ${hash} </td>`;
         let str4 = `</tr></tbody>`;
         $table.append(str1 + str2 + str3 + str4);
-        console.log(value);
     })
 }
