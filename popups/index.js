@@ -12,7 +12,7 @@
 // }
 
 $(document).ready(function () {
-    browser.storage.local.get("database").then((result) => {
+    browser.storage.local.get("Database").then((result) => {
         reset(result.database);
     }).catch((err) => { console.log(err); });
 })

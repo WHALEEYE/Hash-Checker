@@ -1,6 +1,6 @@
-let database = {};
+let Database = {};
 
-const WATabs = []
+const WATabs = {}
 const Methods = {
 	signature: true,
 	mime: true,
@@ -93,7 +93,7 @@ function detectWasm(req, callback) {
 browser.runtime.onConnect.addListener(port => {
 	// Send message to popup with active tab info
 	browser.tabs.query({ active: true, currentWindow: true }).then(tabs => {
-		port.postMessage(WATabs.find(t => t.id === tabs[0].id))
+		port.postMessage(WATabs[tabs[0].id])
 	})
 })
 
@@ -102,7 +102,7 @@ browser.webRequest.onHeadersReceived.addListener(
 	req => {
 		// Reset wasm popup for this tab
 		if (!req.documentUrl && req.parentFrameId === -1) {
-			let targetTab = WATabs.find(t => t.id === req.tabId)
+			let targetTab = WATabs[req.tabId]
 			if (targetTab) {
 				targetTab.wasm = []
 				updatePageAction(targetTab)
@@ -118,7 +118,7 @@ browser.webRequest.onHeadersReceived.addListener(
 		if (req.method !== 'GET') return
 
 		detectWasm(req, req => {
-			let targetTab = WATabs.find(t => t.id === req.tabId)
+			let targetTab = WATabs[req.tabId]
 
 			if (targetTab) {
 				// Add new ws url
@@ -130,7 +130,7 @@ browser.webRequest.onHeadersReceived.addListener(
 					originUrl: req.originUrl,
 					wasm: [req.url],
 				}
-				WATabs.push(targetTab)
+				WATabs[req.tabId] = targetTab
 			}
 
 			updatePageAction(targetTab)
@@ -164,19 +164,19 @@ browser.webRequest.onBeforeSendHeaders.addListener(
 				let filter = browser.webRequest.filterResponseData(details.requestId);
 
 				filter.ondata = event => {
-					if (database[url] === undefined) {
-						database[url] = {
+					if (Database[url] === undefined) {
+						Database[url] = {
 							'url2hash': {[details.url]: SHA256(event.data)},
 							'iconUrl': iconUrl,
 							'title': title
 						}
 					}
 					else {
-						Object.assign(database[url]['url2hash'], {
+						Object.assign(Database[url]['url2hash'], {
 							[details.url]: SHA256(event.data),
 						})
 					}
-					browser.storage.local.set({ 'database': database });
+					browser.storage.local.set({ 'Database': Database });
 					// console.log(SHA256(event.data));
 					filter.write(event.data);
 					filter.disconnect();
@@ -201,8 +201,7 @@ browser.storage.local.get('methods').then(stored => {
 
 // Handle tab closing
 browser.tabs.onRemoved.addListener(tabId => {
-	let targetIndex = WATabs.findIndex(t => t.id === tabId)
-	if (targetIndex !== -1) WATabs.splice(targetIndex, 1)
+	delete WATabs[tabId];
 })
 
 // Handle settings change
