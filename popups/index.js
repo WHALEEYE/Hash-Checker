@@ -13,7 +13,7 @@
 
 $(document).ready(function () {
     browser.storage.local.get("Database").then((result) => {
-        reset(result.database);
+        reset(result.Database);
     }).catch((err) => { console.log(err); });
 })
 
