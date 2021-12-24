@@ -140,38 +140,47 @@ browser.webRequest.onHeadersReceived.addListener(
 	['responseHeaders', 'blocking']
 )
 
-function get_domain(requestHeaders) {
-	let host_part = requestHeaders.find(header => {
-		return header.name === 'Host' || header.name === 'host';
-	});
+// function get_domain(requestHeaders) {
+// 	let host_part = requestHeaders.find(header => {
+// 		return header.name === 'Host' || header.name === 'host';
+// 	});
 
-	let referer_part = requestHeaders.find(header => {
-		return header.name === 'Referer' || header.name === 'Referer';
-	});
-	let domain = referer_part === undefined ? host_part : referer_part;
-	const regex = /(?:[\w-]+\.)+[\w-]+/;
-	return regex.exec(domain.value);
-}
+// 	let referer_part = requestHeaders.find(header => {
+// 		return header.name === 'Referer' || header.name === 'Referer';
+// 	});
+// 	let domain = referer_part === undefined ? host_part : referer_part;
+// 	const regex = /(?:[\w-]+\.)+[\w-]+/;
+// 	return regex.exec(domain.value);
+// }
 
 browser.webRequest.onBeforeSendHeaders.addListener(
 	details => {
-		let domain = get_domain(details.requestHeaders);
-		if(domain !== null && domain !== undefined) {
-			let domain_name = domain[0];
-			let filter = browser.webRequest.filterResponseData(details.requestId);
+		let tabId = details.tabId;
+		if (tabId && tabId !== browser.tabs.TAB_ID_NONE) {
+			browser.tabs.get(tabId).then(tab => {
+				let title = tab.title;
+				let iconUrl = tab.favIconUrl;
+				let filter = browser.webRequest.filterResponseData(details.requestId);
 
-			filter.ondata = event => {
-				if(url2hash[domain_name] === undefined) {
-					url2hash[domain_name] = { [details.url]: SHA256(event.data) }
+				filter.ondata = event => {
+					if (url2hash[title] === undefined) {
+						url2hash[title] = { 
+							[details.url]: SHA256(event.data),
+							'iconUrl': iconUrl
+						}
+					}
+					else {
+						Object.assign(url2hash[title], { 
+							[details.url]: SHA256(event.data),
+							'iconUrl': iconUrl
+						})
+					}
+					browser.storage.local.set({ 'url2hash': url2hash });
+					// console.log(SHA256(event.data));
+					filter.write(event.data);
+					filter.disconnect();
 				}
-				else {
-					Object.assign(url2hash[domain_name], { [details.url]: SHA256(event.data) })
-				}
-				browser.storage.local.set({ 'url2hash': url2hash });
-				// console.log(SHA256(event.data));
-				filter.write(event.data);
-				filter.disconnect();
-			}
+			})
 		}
 
 		return {};
