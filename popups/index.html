@@ -9,18 +9,23 @@
     integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
 </head>
 
-<body class="popup-body m-3">
+<body class="popup-body m-3 px-3">
 
   <div class="container">
-    <header
-      class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between mb-4 border-bottom">
-
+    <header class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between mb-4 border-bottom row">
       <ul class="nav col-12 col-md-auto mb-2 justify-content-center mb-md-0">
         <li><a href="#" class="nav-link px-2 link-dark">Hash Table</a></li>
         <li><a href="#" class="nav-link px-2 link-secondary">Compare</a></li>
       </ul>
     </header>
   </div>
+
+  <select id="domain-selector" class="form-select col-4" aria-label="Default select example">
+    <option selected>Open this select menu</option>
+    <option value="1">One</option>
+    <option value="2">Two</option>
+    <option value="3">Three</option>
+  </select>
 
   <table id="site-hash-table" class="table">
     <thead>
@@ -32,14 +37,13 @@
     </thead>
     <tbody>
       <tr>
-        <td>1</th>
-        <td>Mark</td>
-        <td>Otto</td>
+        <td>-</th>
+        <td>-</td>
+        <td>-</td>
       </tr>
     </tbody>
   </table>
 
-  <div class="button reset">Reset</div>
   <script src="jquery-3.6.0.min.js"></script>
   <script src="index.js"></script>
 </body>

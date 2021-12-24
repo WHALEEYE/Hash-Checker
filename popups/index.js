@@ -1,13 +1,44 @@
 $(document).ready(function () {
-    $(".reset").click(() => {
-        browser.storage.local.get("url2hash").then((result) => {
-            reset(result.url2hash);
-        }).catch((err) => { console.log(err); });
-    });
+    browser.storage.local.get("url2hash").then((result) => {
+        reset(result.url2hash);
+    }).catch((err) => { console.log(err); });
 })
 
+var stored_url2hash = {}
 
 function reset(url2hash) {
+
+    stored_url2hash = url2hash
+
+    var domain
+
+
+    function logTabs(tabs) {
+        for (let tab of tabs) {
+            const regex = /(?:[\w-]+\.)+[\w-]+/;
+            domain = regex.exec(tab.url);
+            if (domain !== null) {
+                domain = domain[0]
+            }
+            $("#domain-selector").children("[selected]").text(domain)
+        }
+
+        Object.entries(url2hash).forEach((value) => {
+            if (domain === value[0]) {
+                refresh_table(value[1])
+            }
+        })
+    }
+
+    function onError(error) {
+        console.log(`Error: ${error}`);
+    }
+
+    let querying = browser.tabs.query({ currentWindow: true, active: true });
+    querying.then(logTabs, onError);
+}
+
+function refresh_table(hashtable) {
     let $table = $("#site-hash-table")
     $table.children("tbody").remove()
     Object.entries(url2hash).forEach((value, index) => {
@@ -28,5 +59,4 @@ function reset(url2hash) {
         $table.append(str1 + icon + str2 + str3 + str4)
         // console.log(value)
     })
-    // document.getElementById("site-hash-table").innerHTML = content.join("\n")
 }
