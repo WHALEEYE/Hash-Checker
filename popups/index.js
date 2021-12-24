@@ -11,6 +11,14 @@ function reset(url2hash) {
     let $table = $("#site-hash-table")
     $table.children("tbody").remove()
     Object.entries(url2hash).forEach((value, index) => {
+        // siteUrl is key
+        // content: {
+        //     url1: hash,
+        //     url2: hash,
+        //     ..........,
+        //     title: String,
+        //     iconUrl: String,
+        // }
         const [siteUrl, content] = value;
         let str1 = "<tbody><tr><td>" + index + "</td>";
         let icon = `<td> <img src=${content.iconUrl}> </td>`;
