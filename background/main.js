@@ -49,31 +49,25 @@ function updatePageAction(tab) {
 	}
 }
 
-/**
- *  Check
- *
- * > req: Object - Details of the request.
- * > cb: (req: RequestDetails) => any - Fires when wasm was detected.
- **/
-function detectWasm(req, callback) {
+function detectWasm(req) {
 	// Get content type from header
 	let contentType = req.responseHeaders.find(h => ContentTypeRGX.test(h.name))
 	if (contentType) contentType = contentType.value
 
 	// Check mime types and ignore non-application type
-	if (contentType && WasmMimeRGX.test(contentType)) return callback(req)
+	if (contentType && WasmMimeRGX.test(contentType)) return true
 
 	// Check signature
-	if (!Methods.signature) return
+	if (!Methods.signature) return false
 	let filter = browser.webRequest.filterResponseData(req.requestId)
-	filter.onstop = e => filter.disconnect()
+
 	filter.ondata = e => {
 		// First data-chunk is enough
 		filter.write(e.data)
 		filter.disconnect()
 
 		// Ignore too small chunks
-		if (e.data.byteLength < 1024) return
+		if (e.data.byteLength < 1024) return false
 		const sig = new Uint8ClampedArray(e.data, 0, 4)
 
 		// Wasm signature
@@ -83,7 +77,7 @@ function detectWasm(req, callback) {
 			sig[2] === 0x73 &&
 			sig[3] === 0x6d
 		) {
-			return callback(req)
+			return true
 		}
 	}
 }
@@ -117,11 +111,11 @@ browser.webRequest.onHeadersReceived.addListener(
 		// Check only GET requests
 		if (req.method !== 'GET') return
 
-		detectWasm(req, req => {
+		if (detectWasm(req)) {
 			let targetTab = WATabs[req.tabId]
 
 			if (targetTab) {
-				// Add new ws url
+				// Add new wasm url
 				if (targetTab.wasm.indexOf(req.url) === -1) targetTab.wasm.push(req.url)
 			} else {
 				// Create
@@ -134,7 +128,7 @@ browser.webRequest.onHeadersReceived.addListener(
 			}
 
 			updatePageAction(targetTab)
-		})
+		}
 	},
 	{ urls: ['<all_urls>'], },
 	['responseHeaders', 'blocking']
@@ -153,6 +147,29 @@ browser.webRequest.onHeadersReceived.addListener(
 // 	return regex.exec(domain.value);
 // }
 
+function updateDatabase(siteUrl, url, iconUrl, title, hash) {
+	if (Database[siteUrl] === undefined) {
+		Database[siteUrl] = {
+			'url2hash': { [url]: hash },
+			'iconUrl': iconUrl,
+			'title': title
+		}
+	}
+	else {
+		Object.assign(Database[siteUrl]['url2hash'], {
+			[url]: hash,
+		})
+	}
+	browser.storage.local.set({ 'Database': Database });
+}
+
+function bufferToHex(buffer) {
+	return [...new Uint8Array(buffer)]
+		.map(b => b.toString(16).padStart(2, "0"))
+		.join("");
+}
+
+
 browser.webRequest.onBeforeSendHeaders.addListener(
 	details => {
 		let tabId = details.tabId;
@@ -164,20 +181,14 @@ browser.webRequest.onBeforeSendHeaders.addListener(
 				let filter = browser.webRequest.filterResponseData(details.requestId);
 
 				filter.ondata = event => {
-					if (Database[url] === undefined) {
-						Database[url] = {
-							'url2hash': {[details.url]: SHA256(event.data)},
-							'iconUrl': iconUrl,
-							'title': title
-						}
-					}
-					else {
-						Object.assign(Database[url]['url2hash'], {
-							[details.url]: SHA256(event.data),
-						})
-					}
-					browser.storage.local.set({ 'Database': Database });
-					// console.log(SHA256(event.data));
+					// use the built in sha256 when possible.
+					crypto.subtle.digest('SHA-256', event.data).then(hash => {
+						updateDatabase(url, details.url, iconUrl, title, bufferToHex(hash))
+					}).catch(_err => {
+						console.log("Using fallback SHA256")
+						updateDatabase(url, details.url, iconUrl, title, SHA256(event.data))
+					})
+
 					filter.write(event.data);
 					filter.disconnect();
 				}
