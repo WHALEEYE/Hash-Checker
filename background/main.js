@@ -27,14 +27,14 @@ function detectWasm(req) {
 
 		// Ignore too small chunks
 		if (e.data.byteLength < 1024) return false
-		const sig = new Uint8ClampedArray(e.data, 0, 4)
+		const signature = new Uint8Array(e.data, 0, 4)
 
 		// Wasm signature
 		if (
-			sig[0] === 0x00 &&
-			sig[1] === 0x61 &&
-			sig[2] === 0x73 &&
-			sig[3] === 0x6d
+			signature[0] === 0x00 &&
+			signature[1] === 0x61 &&
+			signature[2] === 0x73 &&
+			signature[3] === 0x6d
 		) {
 			return true
 		}
