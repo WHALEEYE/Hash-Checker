@@ -23,16 +23,16 @@ function reset(database) {
 
     stored_database = database;
     function logTabs(tabs) {
-        let current_url = tabs[0].url;
-        let current_title = tabs[0].title;
-        $("#domain-selector").children("[selected]").text(current_title);
+        let currentUrl = tabs[0].url;
+        let currentTitle = tabs[0].title;
+        let currentIconUrl = tabs[0].favIconUrl;
+        $("#site-name").text(currentTitle);
+        $("#site-icon").attr("src", currentIconUrl);
 
-        Object.entries(database).forEach((value) => {
-            let [siteUrl, siteData] = value;
-            if (current_url === siteUrl) {
-                refresh_table(siteData);
-            }
-        })
+        siteData = database[currentUrl]
+        if(siteData) {
+            refresh_table(siteData);
+        }
     }
 
     function onError(error) {
