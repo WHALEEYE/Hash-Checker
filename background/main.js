@@ -1,5 +1,5 @@
 let Database = {};
-let SiteWithWasm = new Set()
+let SiteWithWasm = {}
 // const WATabs = {}
 const Methods = {
 	signature: true,
@@ -52,24 +52,12 @@ browser.webRequest.onHeadersReceived.addListener(
 		if (req.method !== 'GET') return
 
 		if (detectWasm(req)) {
-			// let targetTab = WATabs[req.tabId]
-			
-			// if (targetTab) {
-			// 	// Add new wasm url
-			// 	if (targetTab.wasm.indexOf(req.url) === -1) targetTab.wasm.push(req.url)
-			// } else {
-			// 	// Create
-				
-			// 	targetTab = {
-			// 		id: req.tabId,
-			// 		originUrl: req.originUrl,
-			// 		wasm: [req.url],
-			// 	}
-			// 	WATabs[req.tabId] = targetTab
-			// }
-
 			browser.tabs.get(req.tabId).then(tab => {
-				SiteWithWasm.add(tab.url)
+				SiteWithWasm[tab.url] = {
+					iconUrl: tab.favIconUrl,
+					title: tab.title
+				}
+				browser.storage.local.set({"SiteWithWasm": SiteWithWasm})
 			})
 		}
 	},
@@ -122,7 +110,7 @@ browser.webRequest.onBeforeSendHeaders.addListener(
 			let url = tab.url;
 
 			// only check site with wasm
-			if(!SiteWithWasm.has(url)) return
+			if(!SiteWithWasm[url]) return
 
 			let title = tab.title;
 			let iconUrl = tab.favIconUrl;
@@ -145,7 +133,7 @@ browser.webRequest.onBeforeSendHeaders.addListener(
 		return {};
 	},
 	{ urls: ['<all_urls>'] },
-	["blocking", "requestHeaders"]
+	["blocking"]
 );
 
 
@@ -155,11 +143,6 @@ browser.storage.local.get('methods').then(stored => {
 	Methods.signature = stored.methods.signature
 	Methods.mime = stored.methods.mime
 })
-
-// // Handle tab closing
-// browser.tabs.onRemoved.addListener(tabId => {
-// 	delete WATabs[tabId];
-// })
 
 // Handle settings change
 browser.storage.onChanged.addListener(changes => {

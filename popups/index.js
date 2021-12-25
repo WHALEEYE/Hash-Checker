@@ -26,16 +26,16 @@ function reset(database) {
         let currentUrl = tabs[0].url;
         let currentTitle = tabs[0].title;
         let currentIconUrl = tabs[0].favIconUrl;
-        $("#site-name").text(currentTitle);
-        $("#site-icon").attr("src", currentIconUrl);
-        if(database) {
+        updateHeader(currentUrl, currentTitle, currentIconUrl)
+        updateAppList()
+        if (database) {
             siteData = database[currentUrl]
-            if(siteData) {
-                refresh_hash_table(siteData);
+            if (siteData) {
+                refreshHashTable(siteData);
                 return
             }
         }
-        hide_hash_table()
+        hideHashTable()
     }
 
     function onError(error) {
@@ -46,12 +46,17 @@ function reset(database) {
     querying.then(logTabs, onError);
 }
 
-function hide_hash_table() {
+function updateHeader(currentUrl, currentTitle, currentIconUrl) {
+    $("#site-icon").attr("src", currentIconUrl);
+    $("#site-name").text(currentTitle);
+}
+
+function hideHashTable() {
     $("#webapp-alert").show()
     $("#site-hash-table").hide()
 }
 
-function refresh_hash_table(siteData) {
+function refreshHashTable(siteData) {
     $("#webapp-alert").hide()
     let $table = $("#site-hash-table");
     $table.show()
@@ -63,5 +68,19 @@ function refresh_hash_table(siteData) {
         let str3 = `<td> ${hash} </td>`;
         let str4 = `</tr></tbody>`;
         $table.append(str1 + str2 + str3 + str4);
+    })
+}
+
+function updateAppList() {
+    browser.storage.local.get("SiteWithWasm").then(result => {
+        let SiteWithWasm = result.SiteWithWasm
+        let appList = $("#app-list ul")
+        appList.children().remove()
+        Object.entries(SiteWithWasm).forEach(([key, value]) => {
+            let item = `<li><img src=${value.iconUrl} alt="">${value.title}</li>`
+            console.log(item)
+            appList.append(item)
+        })
+        console.log(appList)
     })
 }
