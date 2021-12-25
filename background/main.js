@@ -1,53 +1,12 @@
 let Database = {};
 let SiteWithWasm = new Set()
-const WATabs = {}
+// const WATabs = {}
 const Methods = {
 	signature: true,
 	mime: true,
 }
 const ContentTypeRGX = /content-type/i
 const WasmMimeRGX = /application\/wasm/i
-
-/**
- *  Update pageAction: title, icon, popup
- **/
-function updatePageAction(tab) {
-	if (!tab.wasm.length) {
-		window.browser.pageAction.hide(tab.id)
-		window.browser.pageAction.setTitle({
-			tabId: tab.id,
-			title: "WebAssembly not detected",
-		})
-		window.browser.pageAction.setIcon({
-			tabId: tab.id,
-			path: {
-				'19': './assets/icons/wa-16_text_inact.png',
-				'38': './assets/icons/wa-32_text_inact.png',
-			},
-		})
-		window.browser.pageAction.setPopup({
-			tabId: tab.id,
-			popup: '',
-		})
-	} else {
-		window.browser.pageAction.show(tab.id)
-		window.browser.pageAction.setTitle({
-			tabId: tab.id,
-			title: "WebAssembly detected",
-		})
-		window.browser.pageAction.setIcon({
-			tabId: tab.id,
-			path: {
-				'19': './assets/icons/wa-16_text.png',
-				'38': './assets/icons/wa-32_text.png',
-			},
-		})
-		window.browser.pageAction.setPopup({
-			tabId: tab.id,
-			popup: './popups/wa-list.html',
-		})
-	}
-}
 
 function detectWasm(req) {
 	// Get content type from header
@@ -82,28 +41,9 @@ function detectWasm(req) {
 	}
 }
 
-
-// Setup communication with popup
-browser.runtime.onConnect.addListener(port => {
-	// Send message to popup with active tab info
-	browser.tabs.query({ active: true, currentWindow: true }).then(tabs => {
-		port.postMessage(WATabs[tabs[0].id])
-	})
-})
-
 // Handle requests
 browser.webRequest.onHeadersReceived.addListener(
 	req => {
-		// Reset wasm popup for this tab
-		if (!req.documentUrl && req.parentFrameId === -1) {
-			let targetTab = WATabs[req.tabId]
-			if (targetTab) {
-				targetTab.wasm = []
-				updatePageAction(targetTab)
-			}
-			return
-		}
-
 		//  The only possible way (for the moment) to load wasm is to use
 		// XmlHttpRequest or fetch.
 		if (req.type !== 'xmlhttprequest') return
@@ -112,27 +52,25 @@ browser.webRequest.onHeadersReceived.addListener(
 		if (req.method !== 'GET') return
 
 		if (detectWasm(req)) {
-			let targetTab = WATabs[req.tabId]
+			// let targetTab = WATabs[req.tabId]
 			
-			if (targetTab) {
-				// Add new wasm url
-				if (targetTab.wasm.indexOf(req.url) === -1) targetTab.wasm.push(req.url)
-			} else {
-				// Create
+			// if (targetTab) {
+			// 	// Add new wasm url
+			// 	if (targetTab.wasm.indexOf(req.url) === -1) targetTab.wasm.push(req.url)
+			// } else {
+			// 	// Create
 				
-				targetTab = {
-					id: req.tabId,
-					originUrl: req.originUrl,
-					wasm: [req.url],
-				}
-				WATabs[req.tabId] = targetTab
-			}
+			// 	targetTab = {
+			// 		id: req.tabId,
+			// 		originUrl: req.originUrl,
+			// 		wasm: [req.url],
+			// 	}
+			// 	WATabs[req.tabId] = targetTab
+			// }
 
 			browser.tabs.get(req.tabId).then(tab => {
 				SiteWithWasm.add(tab.url)
 			})
-
-			updatePageAction(targetTab)
 		}
 	},
 	{ urls: ['<all_urls>'], },
@@ -214,15 +152,14 @@ browser.webRequest.onBeforeSendHeaders.addListener(
 // Get stored settings
 browser.storage.local.get('methods').then(stored => {
 	if (!stored.methods) return
-	Methods.decompress = stored.methods.decompress
 	Methods.signature = stored.methods.signature
 	Methods.mime = stored.methods.mime
 })
 
-// Handle tab closing
-browser.tabs.onRemoved.addListener(tabId => {
-	delete WATabs[tabId];
-})
+// // Handle tab closing
+// browser.tabs.onRemoved.addListener(tabId => {
+// 	delete WATabs[tabId];
+// })
 
 // Handle settings change
 browser.storage.onChanged.addListener(changes => {
