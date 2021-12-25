@@ -28,11 +28,14 @@ function reset(database) {
         let currentIconUrl = tabs[0].favIconUrl;
         $("#site-name").text(currentTitle);
         $("#site-icon").attr("src", currentIconUrl);
-
-        siteData = database[currentUrl]
-        if(siteData) {
-            refresh_table(siteData);
+        if(database) {
+            siteData = database[currentUrl]
+            if(siteData) {
+                refresh_hash_table(siteData);
+                return
+            }
         }
+        hide_hash_table()
     }
 
     function onError(error) {
@@ -43,8 +46,15 @@ function reset(database) {
     querying.then(logTabs, onError);
 }
 
-function refresh_table(siteData) {
+function hide_hash_table() {
+    $("#webapp-alert").show()
+    $("#site-hash-table").hide()
+}
+
+function refresh_hash_table(siteData) {
+    $("#webapp-alert").hide()
     let $table = $("#site-hash-table");
+    $table.show()
     $table.children("tbody").remove();
     Object.entries(siteData.url2hash).forEach((value, index) => {
         let [url, hash] = value;

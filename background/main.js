@@ -1,5 +1,5 @@
 let Database = {};
-
+let SiteWithWasm = new Set()
 const WATabs = {}
 const Methods = {
 	signature: true,
@@ -113,12 +113,13 @@ browser.webRequest.onHeadersReceived.addListener(
 
 		if (detectWasm(req)) {
 			let targetTab = WATabs[req.tabId]
-
+			
 			if (targetTab) {
 				// Add new wasm url
 				if (targetTab.wasm.indexOf(req.url) === -1) targetTab.wasm.push(req.url)
 			} else {
 				// Create
+				
 				targetTab = {
 					id: req.tabId,
 					originUrl: req.originUrl,
@@ -126,6 +127,10 @@ browser.webRequest.onHeadersReceived.addListener(
 				}
 				WATabs[req.tabId] = targetTab
 			}
+
+			browser.tabs.get(req.tabId).then(tab => {
+				SiteWithWasm.add(tab.url)
+			})
 
 			updatePageAction(targetTab)
 		}
@@ -173,27 +178,31 @@ function bufferToHex(buffer) {
 browser.webRequest.onBeforeSendHeaders.addListener(
 	details => {
 		let tabId = details.tabId;
-		if (tabId && tabId !== browser.tabs.TAB_ID_NONE) {
-			browser.tabs.get(tabId).then(tab => {
-				let url = tab.url;
-				let title = tab.title;
-				let iconUrl = tab.favIconUrl;
-				let filter = browser.webRequest.filterResponseData(details.requestId);
+		if (!tabId || tabId === browser.tabs.TAB_ID_NONE) return
+		
+		browser.tabs.get(tabId).then(tab => {
+			let url = tab.url;
 
-				filter.ondata = event => {
-					// use the built in sha256 when possible.
-					crypto.subtle.digest('SHA-256', event.data).then(hash => {
-						updateDatabase(url, details.url, iconUrl, title, bufferToHex(hash))
-					}).catch(_err => {
-						console.log("Using fallback SHA256")
-						updateDatabase(url, details.url, iconUrl, title, SHA256(event.data))
-					})
+			// only check site with wasm
+			if(!SiteWithWasm.has(url)) return
 
-					filter.write(event.data);
-					filter.disconnect();
-				}
-			})
-		}
+			let title = tab.title;
+			let iconUrl = tab.favIconUrl;
+			let filter = browser.webRequest.filterResponseData(details.requestId);
+
+			filter.ondata = event => {
+				// use the built in sha256 when possible.
+				crypto.subtle.digest('SHA-256', event.data).then(hash => {
+					updateDatabase(url, details.url, iconUrl, title, bufferToHex(hash))
+				}).catch(_err => {
+					console.log("Using fallback SHA256")
+					updateDatabase(url, details.url, iconUrl, title, SHA256(event.data))
+				})
+
+				filter.write(event.data);
+				filter.disconnect();
+			}
+		})
 
 		return {};
 	},
