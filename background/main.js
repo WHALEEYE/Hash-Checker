@@ -8,8 +8,6 @@ browser.storage.local.get("Database").then(result => {
 		if (result) {
 			SiteWithWasm = result
 		}
-		// Handle settings change
-		console.log('prev data loaded')
 
 		// Handle requests
 		browser.webRequest.onHeadersReceived.addListener(
@@ -23,7 +21,6 @@ browser.storage.local.get("Database").then(result => {
 			{ urls: ['<all_urls>'] },
 			["blocking"]
 		);
-		showAlert("assets/icons/wa-96.png", "https://test.com")
 	})
 })
 
@@ -31,12 +28,21 @@ const ContentTypeRGX = /content-type/i
 const WasmMimeRGX = /application\/wasm/i
 const PossibleWasmMimeRGX = /binary\/octet-stream/i
 
-function showAlert(iconUrl, url) {
+function showContentChangeAlert(iconUrl, url) {
 	browser.notifications.create("", {
 		"type": "basic",
 		"iconUrl": iconUrl,
 		"title": "Web APP change alert",
 		"message": `The content ${url} has changed`
+	});
+}
+
+function showWasmDetectedAlert(iconUrl, url) {
+	browser.notifications.create("", {
+		"type": "basic",
+		"iconUrl": iconUrl,
+		"title": "Web APP detected alert",
+		"message": `The content ${url} is wasm`
 	});
 }
 
@@ -54,9 +60,7 @@ function updateDatabase(siteUrl, url, iconUrl, title, hash) {
 			Database[siteUrl]['url2hash'][url] = hash
 		}
 		else if (oldHash && oldHash !== hash) {
-			console.log(oldHash)
-			console.log(hash)
-			showAlert(iconUrl, url);
+			showContentChangeAlert(iconUrl, url);
 			Database[siteUrl]['url2hash'][url] = hash
 			browser.storage.local.set({ 'Database': Database });
 			return true
@@ -126,6 +130,14 @@ function isWasm(req, isWasmCallback) {
 	}
 }
 
+function updateSiteData(tabUrl, iconUrl, title) {
+	SiteWithWasm[tabUrl] = {
+		iconUrl: iconUrl,
+		title: title
+	}
+	browser.storage.local.set({ "SiteWithWasm": SiteWithWasm })
+}
+
 function detechWasm(req) {
 	//  The only possible way (for the moment) to load wasm is to use
 	// XmlHttpRequest or fetch.
@@ -135,11 +147,15 @@ function detechWasm(req) {
 	if (req.method !== 'GET') return
 	isWasm(req, () => {
 		browser.tabs.get(req.tabId).then(tab => {
-			SiteWithWasm[tab.url] = {
-				iconUrl: tab.favIconUrl,
-				title: tab.title
+			let siteData = SiteWithWasm[tab.url]
+			if(siteData) {
+				updateSiteData(tab.url, tab.favIconUrl, tab.title)
+				showWasmDetectedAlert(tab.favIconUrl, req.url)
 			}
-			browser.storage.local.set({ "SiteWithWasm": SiteWithWasm })
+			else if(siteData.iconUrl !== tab.favIconUrl || siteData.title !== tab.title) {
+				// update site data
+				updateSiteData(tab.url, tab.favIconUrl, tab.title)
+			}
 		})
 	})
 }
@@ -160,7 +176,7 @@ function calcHash(details) {
 		let contents = [];
 		filter.ondata = event => {
 			// use the built in sha256 when possible.
-			fullContent.push(event.data)
+			contents.push(event.data)
 			filter.write(event.data);
 		}
 		filter.onstop = event => {

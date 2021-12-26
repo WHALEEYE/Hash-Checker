@@ -51,7 +51,7 @@ function reset(database) {
 }
 
 function updateHeader(currentUrl, currentTitle, currentIconUrl) {
-    $("#site-icon").attr("src", currentIconUrl?currentIconUrl:"/icon.png");
+    $("#site-icon").attr("src", currentIconUrl?currentIconUrl:"/assets/icons/wa-48.png");
     $("#site-name").text(currentTitle);
 }
 
@@ -84,7 +84,7 @@ function updateAppList() {
         let $appList = $("#app-list")
         $appList.children("tbody").remove();
         Object.values(SiteWithWasm).forEach((value) => {
-            let item = `<tbody><td> <img width="32" height="32" src=${value.iconUrl?value.iconUrl:"/icon.png"} alt=""> ${value.title} </td>`;
+            let item = `<tbody><td> <img width="28" height="28" src=${value.iconUrl?value.iconUrl:"/assets/icons/wa-48.png"} alt=""> ${value.title} </td>`;
             let op = `<td></td></tr></tbody>`
             $appList.append(item+op)
         })
