@@ -34,9 +34,6 @@ function reset(database) {
         updateAppList()
         if (database) {
             siteData = database[currentUrl]
-            console.log("database",database)
-            console.log("currentUrl",currentUrl)
-            console.log("siteData",siteData)
             if (siteData) {
                 refreshHashTable(siteData);
                 return
@@ -54,7 +51,7 @@ function reset(database) {
 }
 
 function updateHeader(currentUrl, currentTitle, currentIconUrl) {
-    $("#site-icon").attr("src", currentIconUrl);
+    $("#site-icon").attr("src", currentIconUrl?currentIconUrl:"/icon.png");
     $("#site-name").text(currentTitle);
 }
 
@@ -67,7 +64,6 @@ function refreshHashTable(siteData) {
 
     $("#webapp-alert").hide()
     let $table = $("#site-hash-table");
-    $table.show()
     $table.children("tbody").remove();
     Object.entries(siteData.url2hash).forEach((value, index) => {
         let [url, hash] = value;
@@ -85,11 +81,12 @@ function updateAppList() {
             return
         }
         let SiteWithWasm = result.SiteWithWasm
-        let appList = $("#app-list ul")
-        appList.empty()
+        let $appList = $("#app-list")
+        $appList.children("tbody").remove();
         Object.values(SiteWithWasm).forEach((value) => {
-            let item = `<li><img src=${value.iconUrl} alt="">${value.title}</li>`
-            appList.append(item)
+            let item = `<tbody><td> <img width="32" height="32" src=${value.iconUrl?value.iconUrl:"/icon.png"} alt=""> ${value.title} </td>`;
+            let op = `<td></td></tr></tbody>`
+            $appList.append(item+op)
         })
     })
 }

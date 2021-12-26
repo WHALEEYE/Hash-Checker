@@ -31,12 +31,23 @@
 
   <div class="tab-content" id="pop-up-tab-content">
     <div class="tab-pane fade show active" id="app-panel" role="tabpanel" aria-labelledby="app-tab">
-      <div id="app-list">
-        <ul>
-          <li>Test</li>
-        </ul>
-      </div>
+      <table id="app-list" class="table">
+        <thead>
+          <tr>
+            <th id="app-name" scope="col">App name</th>
+            <th id="operation" scope="col">Operation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>-</th>
+            <td>-</td>
+            <td>-</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
+
 
     <div class="tab-pane fade" id="list-panel" role="tabpanel" aria-labelledby="list-tab">
       <div id="webapp-alert">
@@ -45,7 +56,7 @@
       <!-- <select id="domain-selector" class="form-select col-4" aria-label="Default select example">
         <option selected>Open this select menu</option>
       </select> -->
-      <table id="site-hash-table">
+      <table id="site-hash-table" class="table">
         <thead>
           <tr>
             <th class="index" scope="col">#</th>
