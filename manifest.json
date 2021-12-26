@@ -1,6 +1,6 @@
 {
     "manifest_version": 2,
-    "name": "Hash-Checker",
+    "name": "hash-checker",
     "version": "1.0",
     "description": "Make webapp a app",
     "icons": {
@@ -21,6 +21,7 @@
     },
     "background": {
         "scripts": [
+            "browser-polyfill.js",
             "background/sha256.js",
             "background/main.js"
         ]
