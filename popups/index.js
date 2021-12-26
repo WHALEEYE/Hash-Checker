@@ -12,9 +12,13 @@
 // }
 
 $(document).ready(function () {
+    $('[data-bs-toggle="tooltip"]').tooltip()
+    $('[data-bs-toggle="tab"]').tab()
+
     browser.storage.local.get("Database").then((result) => {
         reset(result.Database);
     }).catch((err) => { console.log(err); });
+
 })
 
 var stored_database = {}
@@ -75,8 +79,8 @@ function updateAppList() {
     browser.storage.local.get("SiteWithWasm").then(result => {
         let SiteWithWasm = result.SiteWithWasm
         let appList = $("#app-list ul")
-        appList.children().remove()
-        Object.entries(SiteWithWasm).forEach(([key, value]) => {
+        appList.empty()
+        SiteWithWasm.forEach((value) => {
             let item = `<li><img src=${value.iconUrl} alt="">${value.title}</li>`
             console.log(item)
             appList.append(item)
