@@ -7,17 +7,19 @@ const Methods = {
 }
 const ContentTypeRGX = /content-type/i
 const WasmMimeRGX = /application\/wasm/i
+const PossibleWasmMimeRGX = /binary\/octet-stream/i
 
-function detectWasm(req) {
+function detectWasm(req, isWasmCallback) {
 	// Get content type from header
+	if (req.url.endswith(".wasm")) isWasmCallback()
 	let contentType = req.responseHeaders.find(h => ContentTypeRGX.test(h.name))
 	if (contentType) contentType = contentType.value
 
-	// Check mime types and ignore non-application type
-	if (contentType && WasmMimeRGX.test(contentType)) return true
-
+	// Check mime types
+	if (contentType && WasmMimeRGX.test(contentType)) isWasmCallback()
+	if (contentType && !PossibleWasmMimeRGX.test(contentType)) return
 	// Check signature
-	if (!Methods.signature) return false
+	if (!Methods.signature) return
 	let filter = browser.webRequest.filterResponseData(req.requestId)
 
 	filter.ondata = e => {
@@ -26,17 +28,18 @@ function detectWasm(req) {
 		filter.disconnect()
 
 		// Ignore too small chunks
-		if (e.data.byteLength < 1024) return false
+		if (e.data.byteLength < 1024) return
 		const signature = new Uint8Array(e.data, 0, 4)
-
 		// Wasm signature
+		// which is .asm
 		if (
 			signature[0] === 0x00 &&
 			signature[1] === 0x61 &&
 			signature[2] === 0x73 &&
 			signature[3] === 0x6d
 		) {
-			return true
+			console.log("wasm")
+			isWasmCallback()
 		}
 	}
 }
@@ -50,16 +53,15 @@ browser.webRequest.onHeadersReceived.addListener(
 
 		// Check only GET requests
 		if (req.method !== 'GET') return
-
-		if (detectWasm(req)) {
+		detectWasm(req, () => {
 			browser.tabs.get(req.tabId).then(tab => {
 				SiteWithWasm[tab.url] = {
 					iconUrl: tab.favIconUrl,
 					title: tab.title
 				}
-				browser.storage.local.set({"SiteWithWasm": SiteWithWasm})
+				browser.storage.local.set({ "SiteWithWasm": SiteWithWasm })
 			})
-		}
+		})
 	},
 	{ urls: ['<all_urls>'], },
 	['responseHeaders', 'blocking']
@@ -105,12 +107,12 @@ browser.webRequest.onBeforeSendHeaders.addListener(
 	details => {
 		let tabId = details.tabId;
 		if (!tabId || tabId === browser.tabs.TAB_ID_NONE) return
-		
+
 		browser.tabs.get(tabId).then(tab => {
 			let url = tab.url;
 
 			// only check site with wasm
-			if(!SiteWithWasm[url]) return
+			if (!SiteWithWasm[url]) return
 
 			let title = tab.title;
 			let iconUrl = tab.favIconUrl;
