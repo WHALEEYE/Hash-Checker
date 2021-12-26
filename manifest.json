@@ -21,7 +21,7 @@
     },
     "background": {
         "scripts": [
-            "browser-polyfill.js",
+            "popups/browser-polyfill.js",
             "background/sha256.js",
             "background/main.js"
         ]
