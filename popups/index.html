@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 
-<html class="popup-page">
+<html class="popup-page" lang="en">
+<title> A brief, clear, informative, and unique Webapp hash checker</title>
 
 <head>
   <meta charset="UTF-8" />
@@ -13,49 +14,59 @@
 
   <div class="container">
     <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom">
-      <a class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
+      <a class="d-flex align-items-center mb-3 me-3 me-md-auto text-dark text-decoration-none">
         <img class="bi me-2" id="site-icon" src="" alt="no icon" width="32" height="32">
         <span class="fs-4" id="site-name">Simple header</span>
       </a>
-      <ul class="nav nav-pills">
-        <li class="nav-item"><a href="#" class="nav-link active" aria-current="page">List</a></li>
-        <li class="nav-item"><a href="#" class="nav-link">Detail</a></li>
+      <ul class="nav nav-pills" role="tablist">
+        <li class="nav-item" role="presentation"><button id="app-tab" type="button" data-bs-toggle="tab"
+            data-bs-target="#app-panel" role="tab" class="nav-link active" aria-controls="app-panel"
+            aria-selected="true">List</button></li>
+        <li class="nav-item" role="presentation"><button id="list-tab" type="button" data-bs-toggle="tab"
+            data-bs-target="#list-panel" role="tab" class="nav-link" aria-controls="list-panel"
+            aria-selected="false">Detail</button></li>
       </ul>
     </header>
   </div>
 
-  <div id="webapp-alert">
-    This site is not a web app.
-  </div>
+  <div class="tab-content" id="pop-up-tab-content">
+    <div class="tab-pane fade show active" id="app-panel" role="tabpanel" aria-labelledby="app-tab">
+      <div id="app-list">
+        <ul>
+          <li>Test</li>
+        </ul>
+      </div>
+    </div>
 
-  <!-- <select id="domain-selector" class="form-select col-4" aria-label="Default select example">
-    <option selected>Open this select menu</option>
-  </select> -->
+    <div class="tab-pane fade" id="list-panel" role="tabpanel" aria-labelledby="list-tab">
+      <div id="webapp-alert">
+        This site is not a web app.
+      </div>
+      <!-- <select id="domain-selector" class="form-select col-4" aria-label="Default select example">
+        <option selected>Open this select menu</option>
+      </select> -->
+      <table id="site-hash-table">
+        <thead>
+          <tr>
+            <th class="index" scope="col">#</th>
+            <th class="site" scope="col">Site</th>
+            <th class="hash" scope="col">Hash</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>-</th>
+            <td>-</td>
+            <td>-</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-  <table id="site-hash-table" class="table">
-    <thead>
-      <tr>
-        <th class="index" scope="col">#</th>
-        <th class="site" scope="col">Site</th>
-        <th class="hash" scope="col">Hash</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>-</th>
-        <td>-</td>
-        <td>-</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <div id="app-list">
-    <ul>
-      <li>Test</li>
-    </ul>
   </div>
 
   <script src="jquery-3.6.0.min.js"></script>
+  <script src="bootstrap.bundle.min.js"></script>
   <script src="index.js"></script>
 </body>
 
