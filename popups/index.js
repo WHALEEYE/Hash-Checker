@@ -103,11 +103,11 @@ function remove_app(title) {
     browser.storage.local.get("SiteWithWasm").then(result => {
         let SiteWithWasm = result.SiteWithWasm
         if(!SiteWithWasm) return
-        let result = Object.entries(SiteWithWasm).find(([_key, value]) => { 
+        let findRes = Object.entries(SiteWithWasm).find(([_key, value]) => { 
             return value.title === title
         })
         if(!result) return
-        let [key, _] = result
+        let [key, _] = findRes
         // key is the domain
         delete SiteWithWasm[key]
         browser.storage.local.set({ 'SiteWithWasm': SiteWithWasm })
