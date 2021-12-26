@@ -93,12 +93,12 @@ function updateAppList() {
         })
         $("button.btn-danger").click(function () {
             $(this).parent().parent().parent().remove()
-            remove_app($(this).parent().prev().text())
+            removeApp($(this).parent().prev().text())
         })
     })
 }
 
-function remove_app(title) {
+function removeApp(title) {
     title = title.trim()
     browser.storage.local.get("SiteWithWasm").then(result => {
         let SiteWithWasm = result.SiteWithWasm
