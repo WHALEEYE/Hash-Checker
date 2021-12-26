@@ -11,6 +11,7 @@
 //     ......
 // }
 const regex = /(?:[\w-]+\.)+[\w-]+/;
+const PortSend = browser.runtime.connect({name:"port-from-index"});
 function getDomainPart(url) {
     return regex.exec(url);
 }
@@ -99,25 +100,5 @@ function updateAppList() {
 }
 
 function removeApp(title) {
-    title = title.trim()
-    browser.storage.local.get("SiteWithWasm").then(result => {
-        let SiteWithWasm = result.SiteWithWasm
-        if(!SiteWithWasm) return
-        let findRes = Object.entries(SiteWithWasm).find(([_key, value]) => { 
-            return value.title === title
-        })
-        if(!result) return
-        let [key, _] = findRes
-        // key is the domain
-        delete SiteWithWasm[key]
-        browser.storage.local.set({ 'SiteWithWasm': SiteWithWasm })
-
-        browser.storage.local.get("Database").then(result => {
-            let Database = result.Database
-            if(Database) {
-                delete Database[key]
-                browser.storage.local.set({ 'Database': Database })
-            }
-        })
-    })
+    PortSend.postMessage(title.trim())
 }

@@ -1,6 +1,28 @@
 let Database = {}
 let SiteWithWasm = {}
 const regex = /(?:[\w-]+\.)+[\w-]+/;
+let PortRecv
+
+function onConnected(p) {
+	PortRecv = p;
+	console.log("port connected")
+	PortRecv.onMessage.addListener(function (title) {
+		let findRes = Object.entries(SiteWithWasm).find(([_key, value]) => {
+			return value.title === title
+		})
+		if (!findRes) return
+		let [key, _] = findRes
+
+		delete SiteWithWasm[key]
+		delete Database[key]
+
+		browser.storage.local.set({ 'SiteWithWasm': SiteWithWasm })
+		browser.storage.local.set({ 'Database': Database })
+	});
+}
+
+browser.runtime.onConnect.addListener(onConnected);
+
 browser.storage.local.get("Database").then(result => {
 	if (result.Database) {
 		Database = result.Database
@@ -81,10 +103,10 @@ function bufferToHex(buffer) {
 }
 
 function concatArrayBuffers(bufs) {
-	if(bufs.length === 1) {
+	if (bufs.length === 1) {
 		return bufs[0]
 	}
-	const totalLen = bufs.reduce((totalSize, buf) => { 
+	const totalLen = bufs.reduce((totalSize, buf) => {
 		return totalSize + buf.byteLength
 	}, 0)
 	const concatBuffer = new Uint8Array(totalLen);
@@ -154,12 +176,12 @@ function detechWasm(req) {
 		browser.tabs.get(req.tabId).then(tab => {
 			let domain = getDomainPart(tab.url)
 			let siteData = SiteWithWasm[domain]
-			if(!siteData) {
+			if (!siteData) {
 				// detect for the first time
 				updateSiteData(domain, tab.favIconUrl, tab.title)
 				showWasmDetectedAlert(domain, tab.favIconUrl, req.url)
 			}
-			else if(siteData.iconUrl !== tab.favIconUrl || siteData.title !== tab.title) {
+			else if (siteData.iconUrl !== tab.favIconUrl || siteData.title !== tab.title) {
 				// update site data
 				updateSiteData(domain, tab.favIconUrl, tab.title)
 			}
