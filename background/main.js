@@ -11,12 +11,18 @@ const PossibleWasmMimeRGX = /binary\/octet-stream/i
 
 function detectWasm(req, isWasmCallback) {
 	// Get content type from header
-	if (req.url.endswith(".wasm")) isWasmCallback()
+	if (req.url.endsWith(".wasm")) {
+		isWasmCallback()
+		return
+	}
 	let contentType = req.responseHeaders.find(h => ContentTypeRGX.test(h.name))
 	if (contentType) contentType = contentType.value
 
 	// Check mime types
-	if (contentType && WasmMimeRGX.test(contentType)) isWasmCallback()
+	if (contentType && WasmMimeRGX.test(contentType)) {
+		isWasmCallback()
+		return 
+	}
 	if (contentType && !PossibleWasmMimeRGX.test(contentType)) return
 	// Check signature
 	if (!Methods.signature) return
@@ -38,8 +44,8 @@ function detectWasm(req, isWasmCallback) {
 			signature[2] === 0x73 &&
 			signature[3] === 0x6d
 		) {
-			console.log("wasm")
 			isWasmCallback()
+			return
 		}
 	}
 }
