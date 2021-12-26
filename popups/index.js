@@ -21,7 +21,6 @@ $(document).ready(function () {
     browser.storage.local.get("Database").then((result) => {
         reset(result.Database);
     }).catch((err) => { console.log(err); });
-
 })
 
 var stored_database = {}
@@ -89,8 +88,16 @@ function updateAppList() {
         $appList.children("tbody").remove();
         Object.values(SiteWithWasm).forEach((value) => {
             let item = `<tbody><td> <img width="28" height="28" src=${value.iconUrl?value.iconUrl:"/assets/icons/wa-48.png"} alt=""> ${value.title} </td>`;
-            let op = `<td></td></tr></tbody>`
+            let op = `<td><button type="button" class="btn btn-danger btn-sm">Delete</button></td></tr></tbody>`
             $appList.append(item+op)
         })
+        $("button.btn-danger").click(function(){
+            $(this).parent().parent().parent().remove()
+            remove_app($(this).parent().prev().text())
+        })
     })
+}
+
+function remove_app(app_name){
+    console.log(app_name)
 }
