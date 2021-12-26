@@ -10,6 +10,10 @@
 //     },
 //     ......
 // }
+const regex = /(?:[\w-]+\.)+[\w-]+/;
+function getDomainPart(url) {
+	return regex.exec(url);
+}
 $(document).ready(function () {
     $('[data-bs-toggle="tooltip"]').tooltip()
     $('[data-bs-toggle="tab"]').tab()
@@ -29,10 +33,11 @@ function reset(database) {
         let currentUrl = tabs[0].url;
         let currentTitle = tabs[0].title;
         let currentIconUrl = tabs[0].favIconUrl;
-        updateHeader(currentUrl, currentTitle, currentIconUrl)
+        let domain = getDomainPart(currentUrl)
+        updateHeader(domain, currentTitle, currentIconUrl)
         updateAppList()
         if (database) {
-            siteData = database[currentUrl]
+            siteData = database[domain]
             if (siteData) {
                 refreshHashTable(siteData);
                 return

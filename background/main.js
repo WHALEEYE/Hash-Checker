@@ -1,5 +1,6 @@
 let Database = {}
 let SiteWithWasm = {}
+const regex = /(?:[\w-]+\.)+[\w-]+/;
 browser.storage.local.get("Database").then(result => {
 	if (result) {
 		Database = result
@@ -46,22 +47,26 @@ function showWasmDetectedAlert(iconUrl, url) {
 	});
 }
 
-function updateDatabase(siteUrl, url, iconUrl, title, hash) {
-	if (Database[siteUrl] === undefined) {
-		Database[siteUrl] = {
+function getDomainPart(url) {
+	return regex.exec(url);
+}
+
+function updateDatabase(domain, url, iconUrl, title, hash) {
+	if (Database[domain] === undefined) {
+		Database[domain] = {
 			'url2hash': { [url]: hash },
 			'iconUrl': iconUrl,
 			'title': title
 		}
 	}
 	else {
-		const oldHash = Database[siteUrl]['url2hash'][url]
+		const oldHash = Database[domain]['url2hash'][url]
 		if (!oldHash) {
-			Database[siteUrl]['url2hash'][url] = hash
+			Database[domain]['url2hash'][url] = hash
 		}
 		else if (oldHash && oldHash !== hash) {
 			showContentChangeAlert(iconUrl, url);
-			Database[siteUrl]['url2hash'][url] = hash
+			Database[domain]['url2hash'][url] = hash
 			browser.storage.local.set({ 'Database': Database });
 			return true
 		}
@@ -147,15 +152,16 @@ function detechWasm(req) {
 	if (req.method !== 'GET') return
 	isWasm(req, () => {
 		browser.tabs.get(req.tabId).then(tab => {
-			let siteData = SiteWithWasm[tab.url]
+			let domain = getDomainPart(tab.url)
+			let siteData = SiteWithWasm[domain]
 			if(!siteData) {
 				// detect for the first time
-				updateSiteData(tab.url, tab.favIconUrl, tab.title)
+				updateSiteData(domain, tab.favIconUrl, tab.title)
 				showWasmDetectedAlert(tab.favIconUrl, req.url)
 			}
 			else if(siteData.iconUrl !== tab.favIconUrl || siteData.title !== tab.title) {
 				// update site data
-				updateSiteData(tab.url, tab.favIconUrl, tab.title)
+				updateSiteData(domain, tab.favIconUrl, tab.title)
 			}
 		})
 	})
@@ -166,10 +172,10 @@ function calcHash(details) {
 	if (!tabId || tabId === browser.tabs.TAB_ID_NONE) return
 
 	browser.tabs.get(tabId).then(tab => {
-		let url = tab.url;
+		let domain = getDomainPart(tab.url);
 
 		// only check site with wasm
-		if (!SiteWithWasm[url]) return
+		if (!SiteWithWasm[domain]) return
 
 		let title = tab.title;
 		let iconUrl = tab.favIconUrl;
@@ -184,10 +190,10 @@ function calcHash(details) {
 			filter.close();
 			let fullContents = concatArrayBuffers(contents)
 			crypto.subtle.digest('SHA-256', fullContents).then(hash => {
-				updateDatabase(url, details.url, iconUrl, title, bufferToHex(hash))
+				updateDatabase(domain, details.url, iconUrl, title, bufferToHex(hash))
 			}).catch(_err => {
 				console.log("Using fallback SHA256")
-				updateDatabase(url, details.url, iconUrl, title, SHA256(fullContents))
+				updateDatabase(domain, details.url, iconUrl, title, SHA256(fullContents))
 			})
 		}
 	})
