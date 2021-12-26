@@ -34,6 +34,9 @@ function reset(database) {
         updateAppList()
         if (database) {
             siteData = database[currentUrl]
+            console.log("database",database)
+            console.log("currentUrl",currentUrl)
+            console.log("siteData",siteData)
             if (siteData) {
                 refreshHashTable(siteData);
                 return
@@ -61,6 +64,7 @@ function hideHashTable() {
 }
 
 function refreshHashTable(siteData) {
+
     $("#webapp-alert").hide()
     let $table = $("#site-hash-table");
     $table.show()
@@ -83,11 +87,9 @@ function updateAppList() {
         let SiteWithWasm = result.SiteWithWasm
         let appList = $("#app-list ul")
         appList.empty()
-        SiteWithWasm.forEach((value) => {
+        Object.values(SiteWithWasm).forEach((value) => {
             let item = `<li><img src=${value.iconUrl} alt="">${value.title}</li>`
-            console.log(item)
             appList.append(item)
         })
-        console.log(appList)
     })
 }
