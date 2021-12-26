@@ -1,16 +1,16 @@
 let Database = {}
 let SiteWithWasm = {}
 browser.storage.local.get("Database").then(result => {
-	if(result) {
+	if (result) {
 		Database = result
 	}
 	browser.storage.local.get("SiteWithWasm").then(result => {
-		if(result) {
+		if (result) {
 			SiteWithWasm = result
 		}
 		// Handle settings change
 		console.log('prev data loaded')
-		
+
 		// Handle requests
 		browser.webRequest.onHeadersReceived.addListener(
 			detechWasm,
@@ -23,12 +23,22 @@ browser.storage.local.get("Database").then(result => {
 			{ urls: ['<all_urls>'] },
 			["blocking"]
 		);
+		showAlert("assets/icons/wa-96.png", "https://test.com")
 	})
 })
 
 const ContentTypeRGX = /content-type/i
 const WasmMimeRGX = /application\/wasm/i
 const PossibleWasmMimeRGX = /binary\/octet-stream/i
+
+function showAlert(iconUrl, url) {
+	browser.notifications.create("", {
+		"type": "basic",
+		"iconUrl": iconUrl,
+		"title": "Web APP change alert",
+		"message": `The content ${url} has changed`
+	});
+}
 
 function updateDatabase(siteUrl, url, iconUrl, title, hash) {
 	if (Database[siteUrl] === undefined) {
@@ -39,6 +49,14 @@ function updateDatabase(siteUrl, url, iconUrl, title, hash) {
 		}
 	}
 	else {
+		const oldHash = Database[siteUrl]['url2hash'][url]
+		if(!oldHash) {
+			Database[siteUrl]['url2hash'][url] = hash
+		}
+		else if (oldHash && oldHash !== hash) {
+			showAlert(iconUrl, url);
+			Database[siteUrl]['url2hash'][url] = hash
+		}
 		Object.assign(Database[siteUrl]['url2hash'], {
 			[url]: hash,
 		})
@@ -64,7 +82,7 @@ function isWasm(req, isWasmCallback) {
 	// Check mime types
 	if (contentType && WasmMimeRGX.test(contentType)) {
 		isWasmCallback()
-		return 
+		return
 	}
 	if (contentType && !PossibleWasmMimeRGX.test(contentType)) return
 	// Check signature

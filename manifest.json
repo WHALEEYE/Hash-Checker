@@ -8,9 +8,10 @@
     },
     "permissions": [
         "webRequest",
-        "tabs",
         "webRequestBlocking",
+        "tabs",
         "storage",
+        "notifications",
         "<all_urls>"
     ],
     "page_action": {
