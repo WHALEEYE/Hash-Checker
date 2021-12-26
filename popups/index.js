@@ -73,6 +73,9 @@ function refreshHashTable(siteData) {
 
 function updateAppList() {
     browser.storage.local.get("SiteWithWasm").then(result => {
+        if(!result) {
+            return
+        }
         let SiteWithWasm = result.SiteWithWasm
         let appList = $("#app-list ul")
         appList.children().remove()
