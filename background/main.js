@@ -148,7 +148,8 @@ function detechWasm(req) {
 	isWasm(req, () => {
 		browser.tabs.get(req.tabId).then(tab => {
 			let siteData = SiteWithWasm[tab.url]
-			if(siteData) {
+			if(!siteData) {
+				// detect for the first time
 				updateSiteData(tab.url, tab.favIconUrl, tab.title)
 				showWasmDetectedAlert(tab.favIconUrl, req.url)
 			}
