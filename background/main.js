@@ -50,24 +50,40 @@ function updateDatabase(siteUrl, url, iconUrl, title, hash) {
 	}
 	else {
 		const oldHash = Database[siteUrl]['url2hash'][url]
-		if(!oldHash) {
+		if (!oldHash) {
 			Database[siteUrl]['url2hash'][url] = hash
 		}
 		else if (oldHash && oldHash !== hash) {
+			console.log(oldHash)
+			console.log(hash)
 			showAlert(iconUrl, url);
 			Database[siteUrl]['url2hash'][url] = hash
+			browser.storage.local.set({ 'Database': Database });
+			return true
 		}
-		Object.assign(Database[siteUrl]['url2hash'], {
-			[url]: hash,
-		})
 	}
-	browser.storage.local.set({ 'Database': Database });
+	return false
 }
 
 function bufferToHex(buffer) {
 	return [...new Uint8Array(buffer)]
 		.map(b => b.toString(16).padStart(2, "0"))
 		.join("");
+}
+
+function concatArrayBuffers(bufs) {
+	if(bufs.length === 1) {
+		return bufs[0]
+	}
+	const totalLen = bufs.reduce((totalSize, buf) => { 
+		return totalSize + buf.byteLength
+	}, 0)
+	const concatBuffer = new Uint8Array(totalLen);
+	bufs.reduce((offset, buf) => {
+		concatBuffer.set(buf, offset)
+		return offset + buf.byteLength
+	}, 0)
+	return concatBuffer.buffer
 }
 
 function isWasm(req, isWasmCallback) {
@@ -141,18 +157,21 @@ function calcHash(details) {
 		let title = tab.title;
 		let iconUrl = tab.favIconUrl;
 		let filter = browser.webRequest.filterResponseData(details.requestId);
-
+		let contents = [];
 		filter.ondata = event => {
 			// use the built in sha256 when possible.
-			crypto.subtle.digest('SHA-256', event.data).then(hash => {
+			fullContent.push(event.data)
+			filter.write(event.data);
+		}
+		filter.onstop = event => {
+			filter.close();
+			let fullContents = concatArrayBuffers(contents)
+			crypto.subtle.digest('SHA-256', fullContents).then(hash => {
 				updateDatabase(url, details.url, iconUrl, title, bufferToHex(hash))
 			}).catch(_err => {
 				console.log("Using fallback SHA256")
-				updateDatabase(url, details.url, iconUrl, title, SHA256(event.data))
+				updateDatabase(url, details.url, iconUrl, title, SHA256(fullContents))
 			})
-
-			filter.write(event.data);
-			filter.disconnect();
 		}
 	})
 
