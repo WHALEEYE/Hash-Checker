@@ -13,7 +13,12 @@
 const regex = /(?:[\w-]+\.)+[\w-]+/;
 const PortSend = browser.runtime.connect({name:"port-from-index"});
 function getDomainPart(url) {
-    return regex.exec(url);
+	let domain = regex.exec(url);
+	if (domain) {
+		return domain[0]
+	} else {
+		return null
+	}
 }
 $(document).ready(function () {
     $('[data-bs-toggle="tooltip"]').tooltip()
@@ -34,10 +39,16 @@ function reset(database) {
         let currentTitle = tabs[0].title;
         let currentIconUrl = tabs[0].favIconUrl;
         let domain = getDomainPart(currentUrl)
+        if(!domain) {
+            return
+        }
         updateHeader(domain, currentTitle, currentIconUrl)
         updateAppList()
         if (database) {
             siteData = database[domain]
+            console.log(siteData)
+            console.log(domain)
+            console.log(database)
             if (siteData) {
                 refreshHashTable(siteData);
                 return

@@ -5,7 +5,6 @@ let PortRecv
 
 function onConnected(p) {
 	PortRecv = p;
-	console.log("port connected")
 	PortRecv.onMessage.addListener(function (title) {
 		let findRes = Object.entries(SiteWithWasm).find(([_key, value]) => {
 			return value.title === title
@@ -70,7 +69,12 @@ function showWasmDetectedAlert(domain, iconUrl, url) {
 }
 
 function getDomainPart(url) {
-	return regex.exec(url);
+	let domain = regex.exec(url);
+	if (domain) {
+		return domain[0]
+	} else {
+		return null
+	}
 }
 
 function updateDatabase(domain, url, iconUrl, title, hash) {
@@ -80,11 +84,13 @@ function updateDatabase(domain, url, iconUrl, title, hash) {
 			'iconUrl': iconUrl,
 			'title': title
 		}
+		browser.storage.local.set({ 'Database': Database });
 	}
 	else {
 		const oldHash = Database[domain]['url2hash'][url]
 		if (!oldHash) {
 			Database[domain]['url2hash'][url] = hash
+			browser.storage.local.set({ 'Database': Database });
 		}
 		else if (oldHash && oldHash !== hash) {
 			showContentChangeAlert(domain, iconUrl, url);
@@ -175,6 +181,7 @@ function detechWasm(req) {
 	isWasm(req, () => {
 		browser.tabs.get(req.tabId).then(tab => {
 			let domain = getDomainPart(tab.url)
+			if(!domain) return
 			let siteData = SiteWithWasm[domain]
 			if (!siteData) {
 				// detect for the first time
@@ -195,6 +202,7 @@ function calcHash(details) {
 
 	browser.tabs.get(tabId).then(tab => {
 		let domain = getDomainPart(tab.url);
+		if(!domain) return
 
 		// only check site with wasm
 		if (!SiteWithWasm[domain]) return
