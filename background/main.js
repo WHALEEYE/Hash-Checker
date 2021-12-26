@@ -2,12 +2,12 @@ let Database = {}
 let SiteWithWasm = {}
 const regex = /(?:[\w-]+\.)+[\w-]+/;
 browser.storage.local.get("Database").then(result => {
-	if (result) {
-		Database = result
+	if (result.Database) {
+		Database = result.Database
 	}
 	browser.storage.local.get("SiteWithWasm").then(result => {
-		if (result) {
-			SiteWithWasm = result
+		if (result.SiteWithWasm) {
+			SiteWithWasm = result.SiteWithWasm
 		}
 
 		// Handle requests

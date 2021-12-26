@@ -12,7 +12,7 @@
 // }
 const regex = /(?:[\w-]+\.)+[\w-]+/;
 function getDomainPart(url) {
-	return regex.exec(url);
+    return regex.exec(url);
 }
 $(document).ready(function () {
     $('[data-bs-toggle="tooltip"]').tooltip()
@@ -54,7 +54,7 @@ function reset(database) {
 }
 
 function updateHeader(currentUrl, currentTitle, currentIconUrl) {
-    $("#site-icon").attr("src", currentIconUrl?currentIconUrl:"/assets/icons/wa-48.png");
+    $("#site-icon").attr("src", currentIconUrl ? currentIconUrl : "/assets/icons/wa-48.png");
     $("#site-name").text(currentTitle);
 }
 
@@ -80,24 +80,44 @@ function refreshHashTable(siteData) {
 
 function updateAppList() {
     browser.storage.local.get("SiteWithWasm").then(result => {
-        if(!result) {
+        if (!result) {
             return
         }
         let SiteWithWasm = result.SiteWithWasm
         let $appList = $("#app-list")
         $appList.children("tbody").remove();
         Object.values(SiteWithWasm).forEach((value) => {
-            let item = `<tbody><td> <img width="28" height="28" src=${value.iconUrl?value.iconUrl:"/assets/icons/wa-48.png"} alt=""> ${value.title} </td>`;
+            let item = `<tbody><td> <img width="28" height="28" src=${value.iconUrl ? value.iconUrl : "/assets/icons/wa-48.png"} alt=""> ${value.title} </td>`;
             let op = `<td><button type="button" class="btn btn-danger btn-sm">Delete</button></td></tr></tbody>`
-            $appList.append(item+op)
+            $appList.append(item + op)
         })
-        $("button.btn-danger").click(function(){
+        $("button.btn-danger").click(function () {
             $(this).parent().parent().parent().remove()
             remove_app($(this).parent().prev().text())
         })
     })
 }
 
-function remove_app(app_name){
-    console.log(app_name)
+function remove_app(title) {
+    title = title.trim()
+    browser.storage.local.get("SiteWithWasm").then(result => {
+        let SiteWithWasm = result.SiteWithWasm
+        if(!SiteWithWasm) return
+        let result = Object.entries(SiteWithWasm).find(([_key, value]) => { 
+            return value.title === title
+        })
+        if(!result) return
+        let [key, _] = result
+        // key is the domain
+        delete SiteWithWasm[key]
+        browser.storage.local.set({ 'SiteWithWasm': SiteWithWasm })
+
+        browser.storage.local.get("Database").then(result => {
+            let Database = result.Database
+            if(Database) {
+                delete Database[key]
+                browser.storage.local.set({ 'Database': Database })
+            }
+        })
+    })
 }
