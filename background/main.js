@@ -29,8 +29,8 @@ const ContentTypeRGX = /content-type/i
 const WasmMimeRGX = /application\/wasm/i
 const PossibleWasmMimeRGX = /binary\/octet-stream/i
 
-function showContentChangeAlert(iconUrl, url) {
-	browser.notifications.create("", {
+function showContentChangeAlert(domain, iconUrl, url) {
+	browser.notifications.create(`${domain}-change`, {
 		"type": "basic",
 		"iconUrl": iconUrl,
 		"title": "Web APP change alert",
@@ -38,8 +38,8 @@ function showContentChangeAlert(iconUrl, url) {
 	});
 }
 
-function showWasmDetectedAlert(iconUrl, url) {
-	browser.notifications.create("", {
+function showWasmDetectedAlert(domain, iconUrl, url) {
+	browser.notifications.create(`${domain}-detect`, {
 		"type": "basic",
 		"iconUrl": iconUrl,
 		"title": "Web APP detected alert",
@@ -65,7 +65,7 @@ function updateDatabase(domain, url, iconUrl, title, hash) {
 			Database[domain]['url2hash'][url] = hash
 		}
 		else if (oldHash && oldHash !== hash) {
-			showContentChangeAlert(iconUrl, url);
+			showContentChangeAlert(domain, iconUrl, url);
 			Database[domain]['url2hash'][url] = hash
 			browser.storage.local.set({ 'Database': Database });
 			return true
@@ -157,7 +157,7 @@ function detechWasm(req) {
 			if(!siteData) {
 				// detect for the first time
 				updateSiteData(domain, tab.favIconUrl, tab.title)
-				showWasmDetectedAlert(tab.favIconUrl, req.url)
+				showWasmDetectedAlert(domain, tab.favIconUrl, req.url)
 			}
 			else if(siteData.iconUrl !== tab.favIconUrl || siteData.title !== tab.title) {
 				// update site data
