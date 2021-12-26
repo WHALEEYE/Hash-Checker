@@ -1,15 +1,58 @@
-let Database = {};
+let Database = {}
 let SiteWithWasm = {}
-// const WATabs = {}
-const Methods = {
-	signature: true,
-	mime: true,
-}
+browser.storage.local.get("Database").then(result => {
+	if(result) {
+		Database = result
+	}
+	browser.storage.local.get("SiteWithWasm").then(result => {
+		if(result) {
+			SiteWithWasm = result
+		}
+		// Handle settings change
+		console.log('prev data loaded')
+		
+		// Handle requests
+		browser.webRequest.onHeadersReceived.addListener(
+			detechWasm,
+			{ urls: ['<all_urls>'], },
+			['responseHeaders', 'blocking']
+		)
+
+		browser.webRequest.onBeforeSendHeaders.addListener(
+			calcHash,
+			{ urls: ['<all_urls>'] },
+			["blocking"]
+		);
+	})
+})
+
 const ContentTypeRGX = /content-type/i
 const WasmMimeRGX = /application\/wasm/i
 const PossibleWasmMimeRGX = /binary\/octet-stream/i
 
-function detectWasm(req, isWasmCallback) {
+function updateDatabase(siteUrl, url, iconUrl, title, hash) {
+	if (Database[siteUrl] === undefined) {
+		Database[siteUrl] = {
+			'url2hash': { [url]: hash },
+			'iconUrl': iconUrl,
+			'title': title
+		}
+	}
+	else {
+		Object.assign(Database[siteUrl]['url2hash'], {
+			[url]: hash,
+		})
+	}
+	browser.storage.local.set({ 'Database': Database });
+}
+
+function bufferToHex(buffer) {
+	return [...new Uint8Array(buffer)]
+		.map(b => b.toString(16).padStart(2, "0"))
+		.join("");
+}
+
+function isWasm(req, isWasmCallback) {
 	// Get content type from header
 	if (req.url.endsWith(".wasm")) {
 		isWasmCallback()
@@ -25,7 +68,6 @@ function detectWasm(req, isWasmCallback) {
 	}
 	if (contentType && !PossibleWasmMimeRGX.test(contentType)) return
 	// Check signature
-	if (!Methods.signature) return
 	let filter = browser.webRequest.filterResponseData(req.requestId)
 
 	filter.ondata = e => {
@@ -50,111 +92,52 @@ function detectWasm(req, isWasmCallback) {
 	}
 }
 
-// Handle requests
-browser.webRequest.onHeadersReceived.addListener(
-	req => {
-		//  The only possible way (for the moment) to load wasm is to use
-		// XmlHttpRequest or fetch.
-		if (req.type !== 'xmlhttprequest') return
+function detechWasm(req) {
+	//  The only possible way (for the moment) to load wasm is to use
+	// XmlHttpRequest or fetch.
+	if (req.type !== 'xmlhttprequest') return
 
-		// Check only GET requests
-		if (req.method !== 'GET') return
-		detectWasm(req, () => {
-			browser.tabs.get(req.tabId).then(tab => {
-				SiteWithWasm[tab.url] = {
-					iconUrl: tab.favIconUrl,
-					title: tab.title
-				}
-				browser.storage.local.set({ "SiteWithWasm": SiteWithWasm })
-			})
-		})
-	},
-	{ urls: ['<all_urls>'], },
-	['responseHeaders', 'blocking']
-)
-
-// function get_domain(requestHeaders) {
-// 	let host_part = requestHeaders.find(header => {
-// 		return header.name === 'Host' || header.name === 'host';
-// 	});
-
-// 	let referer_part = requestHeaders.find(header => {
-// 		return header.name === 'Referer' || header.name === 'Referer';
-// 	});
-// 	let domain = referer_part === undefined ? host_part : referer_part;
-// 	const regex = /(?:[\w-]+\.)+[\w-]+/;
-// 	return regex.exec(domain.value);
-// }
-
-function updateDatabase(siteUrl, url, iconUrl, title, hash) {
-	if (Database[siteUrl] === undefined) {
-		Database[siteUrl] = {
-			'url2hash': { [url]: hash },
-			'iconUrl': iconUrl,
-			'title': title
-		}
-	}
-	else {
-		Object.assign(Database[siteUrl]['url2hash'], {
-			[url]: hash,
-		})
-	}
-	browser.storage.local.set({ 'Database': Database });
-}
-
-function bufferToHex(buffer) {
-	return [...new Uint8Array(buffer)]
-		.map(b => b.toString(16).padStart(2, "0"))
-		.join("");
-}
-
-
-browser.webRequest.onBeforeSendHeaders.addListener(
-	details => {
-		let tabId = details.tabId;
-		if (!tabId || tabId === browser.tabs.TAB_ID_NONE) return
-
-		browser.tabs.get(tabId).then(tab => {
-			let url = tab.url;
-
-			// only check site with wasm
-			if (!SiteWithWasm[url]) return
-
-			let title = tab.title;
-			let iconUrl = tab.favIconUrl;
-			let filter = browser.webRequest.filterResponseData(details.requestId);
-
-			filter.ondata = event => {
-				// use the built in sha256 when possible.
-				crypto.subtle.digest('SHA-256', event.data).then(hash => {
-					updateDatabase(url, details.url, iconUrl, title, bufferToHex(hash))
-				}).catch(_err => {
-					console.log("Using fallback SHA256")
-					updateDatabase(url, details.url, iconUrl, title, SHA256(event.data))
-				})
-
-				filter.write(event.data);
-				filter.disconnect();
+	// Check only GET requests
+	if (req.method !== 'GET') return
+	isWasm(req, () => {
+		browser.tabs.get(req.tabId).then(tab => {
+			SiteWithWasm[tab.url] = {
+				iconUrl: tab.favIconUrl,
+				title: tab.title
 			}
+			browser.storage.local.set({ "SiteWithWasm": SiteWithWasm })
 		})
+	})
+}
 
-		return {};
-	},
-	{ urls: ['<all_urls>'] },
-	["blocking"]
-);
+function calcHash(details) {
+	let tabId = details.tabId;
+	if (!tabId || tabId === browser.tabs.TAB_ID_NONE) return
 
+	browser.tabs.get(tabId).then(tab => {
+		let url = tab.url;
 
-// Get stored settings
-browser.storage.local.get('methods').then(stored => {
-	if (!stored.methods) return
-	Methods.signature = stored.methods.signature
-	Methods.mime = stored.methods.mime
-})
+		// only check site with wasm
+		if (!SiteWithWasm[url]) return
 
-// Handle settings change
-browser.storage.onChanged.addListener(changes => {
-	if (!changes.methods) return
-	Methods.signature = changes.methods.newValue.signature
-	Methods.mime = changes.methods.newValue.mime
-})
+		let title = tab.title;
+		let iconUrl = tab.favIconUrl;
+		let filter = browser.webRequest.filterResponseData(details.requestId);
+
+		filter.ondata = event => {
+			// use the built in sha256 when possible.
+			crypto.subtle.digest('SHA-256', event.data).then(hash => {
+				updateDatabase(url, details.url, iconUrl, title, bufferToHex(hash))
+			}).catch(_err => {
+				console.log("Using fallback SHA256")
+				updateDatabase(url, details.url, iconUrl, title, SHA256(event.data))
+			})
+
+			filter.write(event.data);
+			filter.disconnect();
+		}
+	})
+
+	return {};
+}
+
