@@ -46,9 +46,6 @@ function reset(database) {
         updateAppList()
         if (database) {
             siteData = database[domain]
-            console.log(siteData)
-            console.log(domain)
-            console.log(database)
             if (siteData) {
                 refreshHashTable(siteData);
                 return
