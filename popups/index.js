@@ -78,14 +78,14 @@ function hideHashTable() {
 function refreshHashTable(siteData) {
 
     $("#webapp-alert").hide()
-    let $table = $("#site-hash-table");
-    $table.children("tbody").remove();
+    let $table = $("#site-hash-table tbody");
+    $table.empty();
     Object.entries(siteData.url2hash).forEach((value, index) => {
         let [url, hash] = value;
-        let str1 = `<tbody><tr><td> ${index} </td>`;
+        let str1 = `<tr><td> ${index} </td>`;
         let str2 = `<td> ${url} </td>`;
         let str3 = `<td> ${hash} </td>`;
-        let str4 = `</tr></tbody>`;
+        let str4 = `</tr>`;
         $table.append(str1 + str2 + str3 + str4);
     })
 }
@@ -96,15 +96,15 @@ function updateAppList() {
             return
         }
         let SiteWithWasm = result.SiteWithWasm
-        let $appList = $("#app-list")
-        $appList.children("tbody").remove();
+        let $appList = $("#app-list tbody")
+        $appList.empty();
         Object.values(SiteWithWasm).forEach((value) => {
-            let item = `<tbody><td> <img width="28" height="28" src=${value.iconUrl ? value.iconUrl : "/assets/icons/wa-48.png"} alt=""> ${value.title} </td>`;
-            let op = `<td><button type="button" class="btn btn-danger btn-sm">Delete</button></td></tr></tbody>`
+            let item = `<tr><td> <img width="28" height="28" src=${value.iconUrl ? value.iconUrl : "/assets/icons/wa-48.png"} alt=""> ${value.title} </td>`;
+            let op = `<td><button type="button" class="btn btn-danger btn-sm">Delete</button></td></tr>`
             $appList.append(item + op)
         })
         $("button.btn-danger").click(function () {
-            $(this).parent().parent().parent().remove()
+            $(this).parent().parent().empty()
             removeApp($(this).parent().prev().text())
         })
     })
