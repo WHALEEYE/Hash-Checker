@@ -84,22 +84,20 @@ function updateDatabase(domain, url, iconUrl, title, hash) {
 			'iconUrl': iconUrl,
 			'title': title
 		}
-		browser.storage.local.set({ 'Database': Database });
 	}
 	else {
 		const oldHash = Database[domain]['url2hash'][url]
 		if (!oldHash) {
 			Database[domain]['url2hash'][url] = hash
-			browser.storage.local.set({ 'Database': Database });
 		}
-		else if (oldHash && oldHash !== hash) {
+		else if (oldHash !== hash) {
 			showContentChangeAlert(domain, iconUrl, url);
 			Database[domain]['url2hash'][url] = hash
-			browser.storage.local.set({ 'Database': Database });
-			return true
+		} else if(oldHash === hash) {
+			return
 		}
 	}
-	return false
+	browser.storage.local.set({ 'Database': Database });
 }
 
 function bufferToHex(buffer) {
